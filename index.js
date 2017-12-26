@@ -1,4 +1,5 @@
 const config = require('./config.json');
+const winston = require('winston');
 
 const twitter = new (require('twit'))({
     consumer_key:         config.twitter.CONSUMER_KEY,
@@ -18,6 +19,15 @@ const binance = new (require('binance')).BinanceRest({
     recvWindow: 10000
 });
 
+const logger = winston.createLogger({
+    level: 'info',
+    transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+        new winston.transports.File({ filename: 'combined.log' })
+    ]
+});
+
 stream.on('tweet', (tweet) => {
     if (!tweetIsOriginal(tweet)) {
         return;
@@ -25,14 +35,14 @@ stream.on('tweet', (tweet) => {
 
     const msg = tweet.text;
 
-    if (msg.indexOf('Coin of the day') !== -1) {
+    if (msg.indexOf('Coin of the day') !== -1 || msg.indexOf('Coin of the week') !== -1) {
         const regExp = /\(([^)]+)\)/;
         const coinSymbols = msg.match(regExp);
 
         if (coinSymbols !== null) {
             const coinSymbol = coinSymbols[1];
 
-            console.log('McAcfee recommends: ' + coinSymbol);
+            logger.info('McAcfee recommends: ' + coinSymbol);
 
             const txnSymbol = coinSymbol + 'ETH';
 
@@ -50,14 +60,14 @@ stream.on('tweet', (tweet) => {
                     timestamp: Date.now()
                 })
                 .then((data) => {
-                    console.log(data);
+                    logger.info(data);
                 })
                 .catch((err) => {
-                    console.error(err);
+                    logger.error(err);
                 });
             })
             .catch((err) => {
-                console.error(err);
+                logger.error(err);
             });
         }
     }

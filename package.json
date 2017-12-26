@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "binance": "^1.1.2",
-    "twit": "^2.2.9"
+    "twit": "^2.2.9",
+    "winston": "^3.0.0-rc1"
   }
 }
