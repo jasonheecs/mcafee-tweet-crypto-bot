@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "binance": "^1.1.2",
+    "cryptocurrencies": "^1.1.1",
+    "tesseract.js": "github:mikewesthad/tesseract.js",
     "twit": "^2.2.9",
     "winston": "^3.0.0-rc1"
   }

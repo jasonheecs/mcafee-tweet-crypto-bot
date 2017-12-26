@@ -1,5 +1,10 @@
+const fs = require('fs');
+const request = require('request');
+const path = require('path');
 const config = require('./config.json');
 const winston = require('winston');
+const Tesseract = require('tesseract.js');
+const cryptocurrencies = require('cryptocurrencies');
 
 const twitter = new (require('twit'))({
     consumer_key:         config.twitter.CONSUMER_KEY,
@@ -28,52 +33,92 @@ const logger = winston.createLogger({
     ]
 });
 
-stream.on('tweet', (tweet) => {
-    if (!tweetIsOriginal(tweet)) {
-        return;
-    }
+const downloadImage = (uri, filename, callback) => {
+    request.head(uri, function(err, res, body) {
+        console.log('content-type:', res.headers['content-type']);
+        console.log('content-length:', res.headers['content-length']);
 
-    const msg = tweet.text;
+        request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+  });
+}
 
-    if (msg.indexOf('Coin of the day') !== -1 || msg.indexOf('Coin of the week') !== -1) {
-        const regExp = /\(([^)]+)\)/;
-        const coinSymbols = msg.match(regExp);
+const options = {
+    langPath: path.join(__dirname, "tesseract/langs") // Or wherever your downloaded langs are stored
+};
 
-        if (coinSymbols !== null) {
-            const coinSymbol = coinSymbols[1];
+var tesseractPromise = Tesseract.create(options);
 
-            logger.info('McAcfee recommends: ' + coinSymbol);
+tesseractPromise.recognize('./testt.jpg', {lang: "eng"}) // Or whichever lang you have downloaded to langs/
+    .then((result) => console.log(result.text));
 
-            const txnSymbol = coinSymbol + 'ETH';
+console.log(getKeyByValue(cryptocurrencies, "TRON"));
 
-            binance.ticker24hr({
-                symbol: txnSymbol
-            })
-            .then((data) => {
-                binance.newOrder({
-                    symbol: txnSymbol,
-                    side: 'BUY',
-                    type: 'LIMIT',
-                    timeInForce: 'GTC',
-                    quantity: config.qtyToBuy,
-                    price: data.bidPrice,
-                    timestamp: Date.now()
-                })
-                .then((data) => {
-                    logger.info(data);
-                })
-                .catch((err) => {
-                    logger.error(err);
-                });
-            })
-            .catch((err) => {
-                logger.error(err);
-            });
-        }
-    }
-});
+// downloadImage('https://www.google.com/images/srpr/logo3w.png', 'google.png', () => {
 
-function tweetIsOriginal(tweet)
-{
+
+    // var tesseractPromise = tesseractjs.create({ langPath: "./tesseract/eng.traineddata" }).recognize('google.png', 'eng');
+
+
+    // tesseract.recognize('google.png', {
+    //     lang: 'eng'
+    // })
+    // .then(function(result){
+    //     console.log(result);
+    // })
+    // .catch((err) => {
+    //     console.error(err);
+    // });
+// });
+
+// stream.on('tweet', (tweet) => {
+//     if (!tweetIsOriginal(tweet)) {
+//         return;
+//     }
+
+//     const msg = tweet.text;
+
+//     if (msg.indexOf('Coin of the day') !== -1 || msg.indexOf('Coin of the week') !== -1) {
+//         const regExp = /\(([^)]+)\)/;
+//         const coinSymbols = msg.match(regExp);
+
+//         if (coinSymbols !== null) {
+//             const coinSymbol = coinSymbols[1];
+
+//             logger.info('McAcfee recommends: ' + coinSymbol);
+
+//             const txnSymbol = coinSymbol + 'ETH';
+
+//             binance.ticker24hr({
+//                 symbol: txnSymbol
+//             })
+//             .then((data) => {
+//                 binance.newOrder({
+//                     symbol: txnSymbol,
+//                     side: 'BUY',
+//                     type: 'LIMIT',
+//                     timeInForce: 'GTC',
+//                     quantity: config.qtyToBuy,
+//                     price: data.bidPrice,
+//                     timestamp: Date.now()
+//                 })
+//                 .then((data) => {
+//                     logger.info(data);
+//                 })
+//                 .catch((err) => {
+//                     logger.error(err);
+//                 });
+//             })
+//             .catch((err) => {
+//                 logger.error(err);
+//             });
+//         }
+//     }
+// });
+
+function tweetIsOriginal(tweet) {
     return tweet.user.id_str == config.mcafeeTwitterId;
+}
+
+function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
 }
